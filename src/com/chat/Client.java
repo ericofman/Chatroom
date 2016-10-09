@@ -8,12 +8,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
 public class Client extends JFrame { 
@@ -26,6 +29,9 @@ public class Client extends JFrame {
 	private JButton btnSend;
 	private JTextArea textArea;
 	private JTextField txtMessage;
+	private JList<String> onlineUsers;
+	
+	private DefaultListModel<String> listModel;
 	
 	public Client(String name, String password, String ipaddress, int port) {
 		this.name = name;
@@ -40,24 +46,11 @@ public class Client extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		GridBagLayout gbl_contentPane = new GridBagLayout();
-		gbl_contentPane.columnWidths = new int[]{245, 0, 1, 130, 75, 0};
-		gbl_contentPane.rowHeights = new int[]{29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		gbl_contentPane.columnWeights = new double[]{1.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-		gbl_contentPane.rowWeights = new double[]{1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_contentPane.columnWidths = new int[]{575, 125};
+		gbl_contentPane.rowHeights = new int[]{463, 37};
+		gbl_contentPane.columnWeights = new double[]{0.5, Double.MIN_VALUE};
+		gbl_contentPane.rowWeights = new double[]{0.5, Double.MIN_VALUE};
 		contentPane.setLayout(gbl_contentPane);
-		
-		
-		textArea = new JTextArea();
-		textArea.setEditable(false);
-		JScrollPane scroll = new JScrollPane(textArea);
-		GridBagConstraints gbc_textArea = new GridBagConstraints();
-		gbc_textArea.gridheight = 15;
-		gbc_textArea.gridwidth = 5;
-		gbc_textArea.insets = new Insets(0, 0, 5, 0);
-		gbc_textArea.fill = GridBagConstraints.BOTH;
-		gbc_textArea.gridx = 0;
-		gbc_textArea.gridy = 0;
-		contentPane.add(scroll, gbc_textArea);
 		
 		txtMessage = new JTextField();
 		txtMessage.addKeyListener(new KeyAdapter() {
@@ -67,31 +60,60 @@ public class Client extends JFrame {
 					pushMessage(name, txtMessage.getText());
 				}
 			}
-		});
+		}); 
+		
 		GridBagConstraints gbc_txtMessage = new GridBagConstraints();
-		gbc_txtMessage.gridwidth = 4;
-		gbc_txtMessage.insets = new Insets(0, 0, 0, 5);
+ 
 		gbc_txtMessage.fill = GridBagConstraints.HORIZONTAL;
+		gbc_txtMessage.insets = new Insets(0, 0, 0, 0);
 		gbc_txtMessage.gridx = 0;
-		gbc_txtMessage.gridy = 15;
+		gbc_txtMessage.gridy = 1;
 		contentPane.add(txtMessage, gbc_txtMessage);
-		txtMessage.setColumns(10);
+		txtMessage.setColumns(0);
+		
+		textArea = new JTextArea();
+		textArea.setEditable(false);
+		JScrollPane scroll = new JScrollPane(textArea);
+		GridBagConstraints gbc_scroll = new GridBagConstraints();
+		gbc_scroll.fill = GridBagConstraints.BOTH;
+		gbc_scroll.insets = new Insets(0, 0, 0, 5);
+		gbc_scroll.gridwidth = 1;
+		gbc_scroll.gridx = 0;
+		gbc_scroll.gridy = 0;
+		contentPane.add(scroll, gbc_scroll);
+		
+		listModel = new DefaultListModel<String>();
+		onlineUsers = new JList<String>(listModel);
+		onlineUsers.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		onlineUsers.setLayoutOrientation(JList.VERTICAL_WRAP);
+		GridBagConstraints gbc_list = new GridBagConstraints();
+		gbc_list.fill = GridBagConstraints.BOTH;
+		gbc_list.insets = new Insets(0, 0, 0, 0); 
+		gbc_list.gridx = 1;
+		gbc_list.gridy = 0; 
+		contentPane.add(onlineUsers, gbc_list);
 		
 		btnSend = new JButton("Send");
-	
-		btnSend.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) { 
-				pushMessage(name, txtMessage.getText());
-			}
-		});
-		GridBagConstraints gbc_btnSend = new GridBagConstraints();
-		gbc_btnSend.gridx = 4;
-		gbc_btnSend.gridy = 15;
-		contentPane.add(btnSend, gbc_btnSend);
+			btnSend.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) { 
+					pushMessage(name, txtMessage.getText());
+				}
+			});
+			GridBagConstraints gbc_btnSend = new GridBagConstraints();
+			gbc_btnSend.gridx = 1;
+			gbc_btnSend.gridy = 1;
+		 
+			contentPane.add(btnSend, gbc_btnSend);
 		setVisible(true);
 		setTitle("Chat Client");
 		
 		txtMessage.requestFocusInWindow();
+		
+		userConnected(name);
+	}
+	
+	private void userConnected(String user) {
+		listModel.addElement(user);
 	}
 	
 	public void pushMessage(String user, String msg) {
