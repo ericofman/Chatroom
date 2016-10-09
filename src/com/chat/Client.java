@@ -1,24 +1,20 @@
 package com.chat;
 
-import java.awt.BorderLayout;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JTextField;
-import java.awt.GridLayout;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
-import javax.swing.BoxLayout;
-import java.awt.FlowLayout;
-import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 public class Client extends JFrame { 
 	private static final long serialVersionUID = 1L;
@@ -50,8 +46,10 @@ public class Client extends JFrame {
 		gbl_contentPane.rowWeights = new double[]{1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		contentPane.setLayout(gbl_contentPane);
 		
+		
 		textArea = new JTextArea();
 		textArea.setEditable(false);
+		JScrollPane scroll = new JScrollPane(textArea);
 		GridBagConstraints gbc_textArea = new GridBagConstraints();
 		gbc_textArea.gridheight = 15;
 		gbc_textArea.gridwidth = 5;
@@ -59,7 +57,7 @@ public class Client extends JFrame {
 		gbc_textArea.fill = GridBagConstraints.BOTH;
 		gbc_textArea.gridx = 0;
 		gbc_textArea.gridy = 0;
-		contentPane.add(textArea, gbc_textArea);
+		contentPane.add(scroll, gbc_textArea);
 		
 		txtMessage = new JTextField();
 		txtMessage.addKeyListener(new KeyAdapter() {
@@ -99,7 +97,8 @@ public class Client extends JFrame {
 	public void pushMessage(String user, String msg) {
 		if(msg.isEmpty()) return;
 		String seperator = System.getProperty("line.separator"); 
-		textArea.append(msg + seperator);
+		textArea.append(user + ": " + msg + seperator);
+		textArea.setCaretPosition(textArea.getDocument().getLength());
 		txtMessage.setText("");
 	}
 }
