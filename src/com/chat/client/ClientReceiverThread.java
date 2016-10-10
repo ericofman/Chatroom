@@ -1,4 +1,4 @@
-package com.chat;
+package com.chat.client;
 
 public class ClientReceiverThread extends Thread {
 

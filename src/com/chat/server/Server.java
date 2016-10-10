@@ -1,4 +1,4 @@
-package com.chat;
+package com.chat.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -9,6 +9,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.chat.utils.Message;
+import com.chat.utils.User;
 
 public class Server {
 

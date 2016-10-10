@@ -1,4 +1,4 @@
-package com.chat;
+package com.chat.client;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -30,6 +30,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
+
+import com.chat.utils.Message;
+import com.chat.utils.User;
 
 public class Client extends JFrame { 
 	private static final long serialVersionUID = 1L;

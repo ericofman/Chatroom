@@ -1,4 +1,4 @@
-package com.chat;
+package com.chat.client;
 
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
