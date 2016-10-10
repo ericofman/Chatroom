@@ -110,11 +110,13 @@ public class Login extends JFrame {
 		contentPane.add(lblIpAddress);
 		
 		txtAddress = new JTextField();
+		txtAddress.setText("localhost");
 		txtAddress.setBounds(121, 154, 130, 26);
 		contentPane.add(txtAddress);
 		txtAddress.setColumns(10);
 		
 		txtPort = new JTextField();
+		txtPort.setText("9000");
 		txtPort.setBounds(121, 211, 130, 26);
 		contentPane.add(txtPort);
 		txtPort.setColumns(10);
