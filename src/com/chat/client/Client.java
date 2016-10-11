@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,8 +32,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
-import com.chat.utils.Message;
-import com.chat.utils.User;
+import com.chat.server.packets.Packet;
 
 public class Client extends JFrame { 
 	private static final long serialVersionUID = 1L;
@@ -51,7 +51,8 @@ public class Client extends JFrame {
 	
 	private ClientReceiverThread receiveThread;
 	
-	private int clientID = 0;
+	private int clientID = 0; 
+	
 	public Client(String username, String password, String ipaddress, int port) {
 		this.username = username;
 		this.password = password;
@@ -61,7 +62,7 @@ public class Client extends JFrame {
 		this.clientID = Math.abs(new Random().nextInt());
 	 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(700, 500);
+		setSize(450, 300);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -78,7 +79,8 @@ public class Client extends JFrame {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-					sendMessage(Message.ID_MESSAGE, ipaddress, txtMessage.getText());
+					sendObjUDP(new Packet.MessagePacket(username, clientID, txtMessage.getText()));
+					pushMessage(username, txtMessage.getText());
 				}
 			}
 		}); 
@@ -117,7 +119,8 @@ public class Client extends JFrame {
 		btnSend = new JButton("Send");
 			btnSend.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) { 
-					sendMessage(Message.ID_MESSAGE, ipaddress, txtMessage.getText());
+					sendObjUDP(new Packet.MessagePacket(username, clientID, txtMessage.getText()));
+					pushMessage(username, txtMessage.getText());
 				}
 			});
 			GridBagConstraints gbc_btnSend = new GridBagConstraints();
@@ -126,35 +129,27 @@ public class Client extends JFrame {
 		 
 			contentPane.add(btnSend, gbc_btnSend);
 		setVisible(true);
-		setTitle("Chat Client");
 		
 		txtMessage.requestFocusInWindow();
 		
 		boolean connected = openConnection();
 	 
-		if(connected) { 
-			listModel.addElement(username); 
-			this.sendMessage(Message.ID_LOGIN, ipaddress, username);
-		}
+		if(connected) {  
+			this.sendObjUDP(new Packet.LoginPacket(username, clientID));
+			addUserList(username);
+		} 
 		
 		receiveThread = new ClientReceiverThread(this);
+		
+		addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+		        sendObjUDP(new Packet.LogoutPacket(username, clientID));
+		    }
+		});
+		
+		setTitle("Chat Client" + " " + socket.getLocalPort());  
 	} 
-	
-	private void sendMessage(int id, String sender, String message) {
-		if(message.isEmpty()) return;
-		
-		ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
-		try {
-			ObjectOutput ou = new ObjectOutputStream(outBytes);
-			Message msgObj = new Message(id, new User(clientID, username), sender, message);
-			ou.writeObject(msgObj);
-			ou.close();
-		} catch (IOException e) { 
-			e.printStackTrace();
-		}
-		
-		sendUDP(outBytes.toByteArray(), this.ipaddress);
-	}
 	
 	private boolean openConnection() {
 		try { 
@@ -166,6 +161,20 @@ public class Client extends JFrame {
 		return true;
 	}
 	
+	private void sendObjUDP(Object packetObj) { 
+		ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
+		try {
+			ObjectOutput ou = new ObjectOutputStream(outBytes);
+			
+			ou.writeObject(packetObj);
+			ou.close();
+		} catch (IOException e) { 
+			e.printStackTrace();
+		}
+		
+		sendUDP(outBytes.toByteArray(), this.ipaddress);
+	}
+	
 	public void receiveUDP() {
 		DatagramPacket packet;
 		byte[] data = new byte[6024];
@@ -175,18 +184,31 @@ public class Client extends JFrame {
 			socket.receive(packet);
 			ObjectInputStream oi = new ObjectInputStream(new ByteArrayInputStream(data));
 			
-			Message msgObj = (Message) oi.readObject();
+			Object packetObj = (Object) oi.readObject();
 			
-			switch(msgObj.getMessageType()) {
-			case Message.ID_MESSAGE: 
-				this.pushMessage(msgObj.getUser().getUsername(), msgObj.getMessage());
-				break;
-			}
+			if(packetObj instanceof Packet.LoginPacket) {
+				this.addUserList(((Packet.LoginPacket) packetObj).username);
+			} 
+			if(packetObj instanceof Packet.LogoutPacket) {
+				this.removeUserList(((Packet.LogoutPacket) packetObj).username);
+			} 
+			if(packetObj instanceof Packet.MessagePacket) {
+				this.pushMessage(((Packet.MessagePacket) packetObj).username, 
+						((Packet.MessagePacket) packetObj).message);
+			} 
 		} catch (IOException e) { 
 			e.printStackTrace();
 		} catch (ClassNotFoundException cnfe) { 
 			cnfe.printStackTrace();
 		} 
+	}
+	
+	public void addUserList(String user) {
+		listModel.addElement(user); 
+	}
+	
+	public void removeUserList(String user) {
+		listModel.removeElement(user);
 	}
 	
 	private void sendUDP(byte data[], String address) { 

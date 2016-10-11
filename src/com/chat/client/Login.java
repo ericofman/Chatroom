@@ -99,7 +99,7 @@ public class Login extends JFrame {
 				} catch(NumberFormatException nfe) {
 					port = -1;
 				}
-				login(username, password, ipaddress, port);
+				login(username, password, ipaddress, port); 
 			}
 		});
 		btnConnect.setBounds(77, 268, 96, 29);

@@ -10,13 +10,12 @@ import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.chat.utils.Message;
-import com.chat.utils.User;
+import com.chat.server.packets.Packet;
 
 public class Server {
 
 	private DatagramSocket socket;
-	private Map<User, InetSocketAddress> clients;
+	private Map<Integer, User> clients;
 
 	public static void main(String[] args) {
 		new Server(9000);
@@ -30,7 +29,7 @@ public class Server {
 		}
 		System.out.println("Server started on port: " + port);
 
-		clients = new HashMap<User, InetSocketAddress>();
+		clients = new HashMap<Integer, User>();
 
 		receive();
 	}
@@ -42,8 +41,31 @@ public class Server {
 				DatagramPacket packet = null;
 
 				try {
-					for (InetSocketAddress address : clients.values()) {
-						packet = new DatagramPacket(data, data.length, address);
+					for (User user : clients.values()) {
+						packet = new DatagramPacket(data, data.length, user.getAddress());
+						socket.send(packet);
+					}
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		broadcast.start();
+	}
+	
+	public void broadcastAllExcept(final byte[] data, InetSocketAddress ignore) {
+		Thread broadcast = new Thread("broadcastExcept") {
+			public void run() {
+
+				DatagramPacket packet = null;
+
+				try {
+					for (User user : clients.values()) { 
+						if(ignore.getPort() == user.getAddress().getPort()) {
+							continue;
+						} 
+						packet = new DatagramPacket(data, data.length, user.getAddress());
 						socket.send(packet);
 					}
 
@@ -67,22 +89,29 @@ public class Server {
 						socket.receive(packet);
 
 						ObjectInputStream oi = new ObjectInputStream(new ByteArrayInputStream(data));
-
-						Message msgObj = (Message) oi.readObject();
-
-						switch (msgObj.getMessageType()) {
-						case Message.ID_LOGIN:
-							System.out.println(msgObj.getUser().getUsername() + " has connected! " + packet.getAddress()
-									+ " | " + "Port: " + packet.getPort());
-
-							clients.put(msgObj.getUser(), new InetSocketAddress(packet.getAddress(), packet.getPort()));
-							break;
-						case Message.ID_MESSAGE:
-							System.out.println(msgObj.getUser().getUsername() + ": " + msgObj.getMessage());
-							broadcastAll(packet.getData());
-							break;
-						}
-
+						Object packetObj = oi.readObject();
+						 
+						InetSocketAddress address = new InetSocketAddress(packet.getAddress(), packet.getPort());
+						
+						if(packetObj instanceof Packet.LoginPacket) {  
+							int clientUID = ((Packet.LoginPacket) packetObj).clientID;
+							clients.put(clientUID, new User(address, ((Packet.LoginPacket) packetObj).username));
+							
+							System.out.println(clients.get(clientUID).getUsername() + " has connected! " + packet.getAddress()
+							+ " | " + "Port: " + packet.getPort());
+							broadcastAllExcept(data, address);
+						} 
+						if(packetObj instanceof Packet.LogoutPacket) {  
+							clients.remove(((Packet.LogoutPacket) packetObj).clientID);
+							System.out.println(((Packet.LogoutPacket) packetObj).username + " has disconnected!");
+							broadcastAllExcept(data, address);
+						} 
+						if(packetObj instanceof Packet.MessagePacket) {
+							String msg = ((Packet.MessagePacket) packetObj).message;
+							int clientUID = ((Packet.MessagePacket) packetObj).clientID;
+							System.out.println(clients.get(clientUID).getUsername() + ": " + msg);
+							broadcastAllExcept(data, address);
+						} 
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					} catch (ClassNotFoundException e) {
