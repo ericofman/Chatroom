@@ -1,6 +1,7 @@
 package com.chat.server.packets;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Packet implements Serializable { 
 	private static final long serialVersionUID = 1L;
@@ -36,6 +37,16 @@ public class Packet implements Serializable {
 		public MessagePacket(String username, int clientID, String message) {
 			super(username, clientID);
 			this.message = message;
+		}
+	}
+	
+	public static class ConnectedUsersPacket extends Packet {   
+		private static final long serialVersionUID = 1L;
+
+		public ArrayList<String> connected;
+		public ConnectedUsersPacket(ArrayList<String> connected) {
+			super("", -1);
+			this.connected = connected;
 		}
 	}
 }

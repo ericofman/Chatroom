@@ -68,7 +68,7 @@ public class Login extends JFrame {
 		contentPane.setLayout(null);
 		
 		txtUsername = new JTextField();
-		txtUsername.setText("Username");
+		txtUsername.setText("User");
 		txtUsername.setBounds(160, 49, 130, 26);
 		contentPane.add(txtUsername);
 		txtUsername.setColumns(10);

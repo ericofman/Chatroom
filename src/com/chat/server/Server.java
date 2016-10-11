@@ -1,12 +1,16 @@
 package com.chat.server;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +21,8 @@ public class Server {
 	private DatagramSocket socket;
 	private Map<Integer, User> clients;
 
+	private ArrayList<String> connected;
+	
 	public static void main(String[] args) {
 		new Server(9000);
 	}
@@ -30,7 +36,7 @@ public class Server {
 		System.out.println("Server started on port: " + port);
 
 		clients = new HashMap<Integer, User>();
-
+		connected = new ArrayList<String>();
 		receive();
 	}
 
@@ -52,6 +58,20 @@ public class Server {
 			}
 		};
 		broadcast.start();
+	}
+	
+	public void broadcastObjAll(Object data) {
+		ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
+		try {
+			ObjectOutput ou = new ObjectOutputStream(outBytes);
+			
+			ou.writeObject(data);
+			ou.close();
+		} catch (IOException e) { 
+			e.printStackTrace();
+		} 
+		
+		broadcastAll(outBytes.toByteArray());
 	}
 	
 	public void broadcastAllExcept(final byte[] data, InetSocketAddress ignore) {
@@ -76,6 +96,20 @@ public class Server {
 		};
 		broadcast.start();
 	}
+	
+	public void broadcastObjAllExcept(Object data, InetSocketAddress ignore) {
+		ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
+		try {
+			ObjectOutput ou = new ObjectOutputStream(outBytes);
+			
+			ou.writeObject(data);
+			ou.close();
+		} catch (IOException e) { 
+			e.printStackTrace();
+		} 
+		
+		broadcastAllExcept(outBytes.toByteArray(), ignore);
+	}
 
 	private void receive() {
 		Thread receiver = new Thread("Receiver") {
@@ -95,15 +129,18 @@ public class Server {
 						
 						if(packetObj instanceof Packet.LoginPacket) {  
 							int clientUID = ((Packet.LoginPacket) packetObj).clientID;
-							clients.put(clientUID, new User(address, ((Packet.LoginPacket) packetObj).username));
-							
+							String username = ((Packet.LoginPacket) packetObj).username;
+							clients.put(clientUID, new User(address, username));
+							connected.add(username);
 							System.out.println(clients.get(clientUID).getUsername() + " has connected! " + packet.getAddress()
 							+ " | " + "Port: " + packet.getPort());
-							broadcastAllExcept(data, address);
+							broadcastObjAll(new Packet.ConnectedUsersPacket(connected));
 						} 
 						if(packetObj instanceof Packet.LogoutPacket) {  
-							clients.remove(((Packet.LogoutPacket) packetObj).clientID);
-							System.out.println(((Packet.LogoutPacket) packetObj).username + " has disconnected!");
+							String username = ((Packet.LogoutPacket) packetObj).username;
+							clients.remove(((Packet.LogoutPacket) packetObj).clientID); 
+							connected.remove(username);
+							System.out.println(username + " has disconnected!");
 							broadcastAllExcept(data, address);
 						} 
 						if(packetObj instanceof Packet.MessagePacket) {

@@ -186,14 +186,17 @@ public class Client extends JFrame {
 			
 			Object packetObj = (Object) oi.readObject();
 			
-			if(packetObj instanceof Packet.LoginPacket) {
-				this.addUserList(((Packet.LoginPacket) packetObj).username);
+			if(packetObj instanceof Packet.ConnectedUsersPacket) {
+				destroyUserList();
+				for(String cUser : ((Packet.ConnectedUsersPacket) packetObj).connected) {
+					this.addUserList(cUser);
+				}
 			} 
 			if(packetObj instanceof Packet.LogoutPacket) {
-				this.removeUserList(((Packet.LogoutPacket) packetObj).username);
+				removeUserList(((Packet.LogoutPacket) packetObj).username);
 			} 
 			if(packetObj instanceof Packet.MessagePacket) {
-				this.pushMessage(((Packet.MessagePacket) packetObj).username, 
+				pushMessage(((Packet.MessagePacket) packetObj).username, 
 						((Packet.MessagePacket) packetObj).message);
 			} 
 		} catch (IOException e) { 
@@ -201,6 +204,10 @@ public class Client extends JFrame {
 		} catch (ClassNotFoundException cnfe) { 
 			cnfe.printStackTrace();
 		} 
+	}
+	
+	public void destroyUserList() {
+		listModel.removeAllElements();
 	}
 	
 	public void addUserList(String user) {
