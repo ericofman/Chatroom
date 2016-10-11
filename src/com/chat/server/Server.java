@@ -18,6 +18,7 @@ import com.chat.server.packets.Packet;
 
 public class Server {
 
+	private boolean serverRunning; 
 	private DatagramSocket socket;
 	private Map<Integer, User> clients;
 
@@ -40,6 +41,12 @@ public class Server {
 		receive();
 	}
 
+	public void close() {
+		socket.close();
+		connected.clear();
+		clients.clear();
+	}
+	
 	public void broadcastAll(final byte[] data) {
 		Thread broadcast = new Thread("broadcast") {
 			public void run() {
@@ -114,7 +121,8 @@ public class Server {
 	private void receive() {
 		Thread receiver = new Thread("Receiver") {
 			public void run() {
-				while (true) {
+				serverRunning = true;
+				while (serverRunning) {
 					byte[] data = new byte[6024];
 
 					DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -155,6 +163,7 @@ public class Server {
 						e.printStackTrace();
 					}
 				}
+				close();
 			}
 		};
 		receiver.start();

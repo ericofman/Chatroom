@@ -106,16 +106,17 @@ public class Client extends JFrame {
 		contentPane.add(scroll, gbc_scroll);
 		
 		listModel = new DefaultListModel<String>();
-		onlineUsers = new JList<String>(listModel);
+		onlineUsers = new JList<String>(listModel); 
 		onlineUsers.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-		onlineUsers.setLayoutOrientation(JList.VERTICAL_WRAP);
+		onlineUsers.setLayoutOrientation(JList.VERTICAL);
+		JScrollPane onlineScroll = new JScrollPane(onlineUsers); 
 		GridBagConstraints gbc_list = new GridBagConstraints();
 		gbc_list.fill = GridBagConstraints.BOTH;
 		gbc_list.insets = new Insets(0, 0, 0, 0); 
 		gbc_list.gridx = 1;
 		gbc_list.gridy = 0; 
-		contentPane.add(onlineUsers, gbc_list);
-		
+		contentPane.add(onlineScroll, gbc_list);
+
 		btnSend = new JButton("Send");
 			btnSend.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) { 
